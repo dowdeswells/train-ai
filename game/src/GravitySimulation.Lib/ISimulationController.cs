@@ -2,7 +2,7 @@ namespace GravitySimulation.Lib;
 
 public interface ISimulationController
 {
-    bool Reset { get; }
+    bool IsReset(ulong currentLoop);
     bool EndSimulation { get; }
 }
 

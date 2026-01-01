@@ -1,8 +1,14 @@
+import errno
 import struct
 import gymnasium as gym
 from gymnasium import spaces
 import socket
 import numpy as np
+
+
+
+
+
 
 class GravityEnv(gym.Env):
     def __init__(self):
@@ -14,18 +20,28 @@ class GravityEnv(gym.Env):
 
         # 2. Setup UDP
         self.tx_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
         self.rx_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.rx_socket.bind(('127.0.0.1', 5006))
-        self.rx_socket.settimeout(1.0)
+        self.rx_socket.setblocking(False)
 
     def _get_telemetry(self):
-        try:
-            byte_data, _ = self.rx_socket.recvfrom(1024)
-            
+      
+        latest_packet = None
+        while True:
+            try:
+                received_bytes, _ = self.rx_socket.recvfrom(1024)
+                latest_packet = received_bytes
+            except socket.error as e:
+                # EAGAIN or EWOULDBLOCK means the buffer is now empty
+                if e.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
+                    break
+                raise
+        if latest_packet:
             # Assuming C# sends: "time,alt,vel,acc,thrust"
             format_str = "<?dqqq"
                 
-            unpacked = struct.unpack(format_str, byte_data)
+            unpacked = struct.unpack(format_str, latest_packet)
             
             data = {
                 "ThrustStatus": unpacked[0],
@@ -34,12 +50,10 @@ class GravityEnv(gym.Env):
                 "Velocity":     unpacked[3],
                 "Acceleration": unpacked[4]
             }
-
-            # thrust = 1.0 if data["ThrustStatus"] else 0.0
-
             return np.array([data["Timestamp"], data["Altitude"]/100, data["Velocity"]/100,data["Acceleration"]/100], dtype=np.float32)
-        except socket.timeout:
+        else:
             return np.zeros(4, dtype=np.float32)
+
 
     def step(self, action):
         # Send action to C# (Port 5005)
@@ -52,30 +66,23 @@ class GravityEnv(gym.Env):
         time_elapsed = obs[0]
 
         reward = 0
-        correct_alt = 150 <= altitude <= 250
-        hover = 5 - abs(velocity)
 
         # reward
-        reward += hover
 
-        if correct_alt:
-            reward += 20
-
-        # if altitude < 200 and velocity > 0:
-        #     reward += 10
-        # if altitude > 400 and velocity < 0:
-        #     reward += 10
-        # # penalty    
-        # if altitude < 200 and velocity < 0:
-        #     reward -= 10
-        # if altitude > 400 and velocity > 0:
-        #     reward -= 10
+        if 20 <= altitude <= 40:
+            reward = 20
+        
+        if (10 <= altitude < 20) or (40 < altitude <= 50):
+            reward = -5
+        
+        if (2 <= altitude < 10) or (50 < altitude <= 58):
+            reward = -10
 
 
-        print(f"sent {action}, received: Altitude {altitude}, Velocity {velocity}, Rewarded: {reward}")
+        print(f"sent {action}, received: time: {time_elapsed}, Altitude {altitude}, Velocity {velocity}, Rewarded: {reward}")
         # 4. Termination Logic
-        terminated = altitude <=0 or altitude >= 400 # Crash or Fly away
-        truncated = False # time_elapsed >= 20.0             # Success after 20s
+        terminated = time_elapsed > 0 and (altitude <=0 or altitude >= 60) # Crash or Fly away
+        truncated = False 
         
         return obs, reward, terminated, truncated, {}
 
@@ -84,5 +91,9 @@ class GravityEnv(gym.Env):
         # Signal C# to reset (optional: you'd need to add reset logic in C#)
         self.tx_socket.sendto(bytes([2]), ('127.0.0.1', 5005))
         obs = self._get_telemetry()
+        # while obs[0] > 0.2:
+        #     print("Reset")
+        #     self.tx_socket.sendto(bytes([2]), ('127.0.0.1', 5005))
+        #     obs = self._get_telemetry()
         return obs, {}
     

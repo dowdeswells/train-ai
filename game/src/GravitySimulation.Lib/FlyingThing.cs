@@ -12,7 +12,7 @@ public class FlyingThing
     public FlyingThing(IFlightController controller)
     {
         _controller = controller;
-        Altitude = 200;
+        Altitude = WorldModel.StartHeight;
     }
 
     public void ApplyWorld(WorldModel world, double deltaTime)
@@ -38,7 +38,7 @@ public class FlyingThing
 
     public void Reset()
     {
-        Altitude = 200;
+        Altitude = WorldModel.StartHeight;
         Velocity = 0.0; // Stop falling at ground
         Acceleration = 0.0;
     }

@@ -13,7 +13,7 @@ public static class LocalMain
 
         CancellationTokenSource cts = new CancellationTokenSource();
         CancellationToken token = cts.Token;
-        var consoleTelemetry = new ConsoleTelemetry("127.0.0.1", Constants.SimulationTelemetryUdpPortNo);
+        var consoleTelemetry = new ConsoleAndUdpTelemetry("127.0.0.1", Constants.SimulationTelemetryUdpPortNo);
 
         var udpController = new UdpController();
         var controllerTask = Task.Run(() => udpController.StartListener(Constants.FlightControllerUdpPortNo), token);
@@ -23,7 +23,7 @@ public static class LocalMain
         //     Task.Run(() => telemetryReceiver.StartListener(Constants.SimulationTelemetryUdpPortNo, udpController),
         //         token);
 
-        var inputReader = new ConsoleInput();
+        var inputReader = new ConsoleInputRelayToUdp();
         inputReader.StartAsUdp("127.0.0.1", Constants.FlightControllerUdpPortNo);
         var inputReaderTask = Task.Run(async () =>
         {

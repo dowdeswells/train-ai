@@ -1,7 +1,7 @@
 import gymnasium as gym
 from stable_baselines3 import PPO, A2C
 import time
-from gravity_env import GravityEnv
+from gravity_env_sockets import GravityEnv
 
 
 def main() -> None:
@@ -9,11 +9,12 @@ def main() -> None:
   env = GravityEnv()
 
   # 2. Load the trained brain
-  model = A2C.load(f"./models/a2c_gravity_pilot_70000")
+  model = PPO.load(f"./models/ppo_gravity_pilot_70000")
 
   print("Pilot engaged. Press Ctrl+C to stop.")
 
   hasCrashed = False
+  retry_count = 1
   obs, info = env.reset()
   try:
       while not hasCrashed:
@@ -27,9 +28,13 @@ def main() -> None:
           # Optional: Add a tiny sleep to match your game's physics frequency
           time.sleep(0.02) 
 
-          if terminated or truncated:
+          if terminated:
               print(f"Crash occurred... {obs}")
-              hasCrashed = True
+              retry_count -= 1
+              if retry_count == 0:
+                  hasCrashed = True
+              else:
+                  obs, info = env.reset()
 
   except KeyboardInterrupt:
       print("Pilot disengaged.")

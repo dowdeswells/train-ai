@@ -3,8 +3,10 @@ namespace GravitySimulation.Lib;
 public class WorldModel
 {
     public const double Gravity = -9.81;
+    public const double StartHeight = 50;
     
     public ICollection<FlyingThing> _things = new List<FlyingThing>();
+    
 
     public void AddThing(FlyingThing thing)
     {

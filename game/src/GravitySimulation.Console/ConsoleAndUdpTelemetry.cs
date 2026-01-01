@@ -4,13 +4,13 @@ using GravitySimulation.Lib;
 
 namespace GravitySimulation.Console;
 
-public class ConsoleTelemetry: ISimulationTelemetry
+public class ConsoleAndUdpTelemetry: ISimulationTelemetry
 {
     private readonly string _ip;
     private readonly int _port;
     private UdpClient _client;
 
-    public ConsoleTelemetry(string ip, int port)
+    public ConsoleAndUdpTelemetry(string ip, int port)
     {
         _ip = ip;
         _port = port;

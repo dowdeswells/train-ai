@@ -3,7 +3,7 @@ using GravitySimulation.Lib;
 
 namespace GravitySimulation.Console;
 
-public class ConsoleInput : IInputReader
+public class ConsoleInputRelayToUdp : IInputReader
 {
     private UdpClient _client;
 

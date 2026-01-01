@@ -6,13 +6,15 @@ public class Simulation
 {
     private readonly ISimulationController _simulationController;
     private readonly ISimulationTelemetry _simulationTelemetry;
+    private readonly IMonitoringService? _monitoringService;
     private readonly Stopwatch _timer = new Stopwatch();
-
-    public Simulation(ISimulationController simulationController, ISimulationTelemetry simulationTelemetry)
+    private ulong _simulationLoop = 0;
+    
+    public Simulation(ISimulationController simulationController, ISimulationTelemetry simulationTelemetry, IMonitoringService? monitoringService = null)
     {
         _simulationController = simulationController;
         _simulationTelemetry = simulationTelemetry;
-        
+        _monitoringService = monitoringService;
     }
 
     public void Start(WorldModel world)
@@ -21,8 +23,9 @@ public class Simulation
 
         while (!_simulationController.EndSimulation)
         {
-            if (_simulationController.Reset)
+            if (_simulationController.IsReset(_simulationLoop))
             {
+                _simulationLoop++;
                 world.Reset();
                 lastTime = ResetTime();
             }
@@ -39,7 +42,12 @@ public class Simulation
 
             _simulationTelemetry.WriteTelemetry(currentTime, thing);
 
-            Thread.Sleep(20); // Run at ~50fps
+            if (_monitoringService != null)
+            {
+                _monitoringService.Update(world, currentTime, _simulationLoop);
+            }
+
+            Thread.Sleep(20); 
         }
     }
 

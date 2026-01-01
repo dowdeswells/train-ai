@@ -9,6 +9,11 @@ public class UdpController : IFlightController, ISimulationController
 {
     public bool IsThrusting { get; set; }
     public bool Reset { get; set; }
+    public bool IsReset(ulong currentLoop)
+    {
+        return Reset;
+    }
+
     public bool EndSimulation { get; set; }
     
     public void StartListener(int port)

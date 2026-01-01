@@ -12,7 +12,7 @@ public static class ExternallyControlledMain
         
         CancellationTokenSource cts = new CancellationTokenSource();
         CancellationToken token = cts.Token;
-        var consoleTelemetry = new ConsoleTelemetry("127.0.0.1", Constants.SimulationTelemetryUdpPortNo);
+        var consoleTelemetry = new ConsoleAndUdpTelemetry("127.0.0.1", Constants.SimulationTelemetryUdpPortNo);
 
         var udpController = new UdpController();
         var controllerTask = Task.Run(() => udpController.StartListener(Constants.FlightControllerUdpPortNo), token);
